@@ -1,0 +1,33 @@
+---
+# tasks file for basic
+
+- name: Update apt and install required system packages
+  ansible.builtin.apt:
+    pkg:
+      - curl
+      - vim
+      - git
+    state: latest
+    update_cache: true
+
+- name: Setup passwordless sudo
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^%sudo'
+    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+    validate: '/usr/sbin/visudo -cf %s' 
+
+- name: Create a new regular user with sudo privileges
+  ansible.builtin.user:
+    name: "{{ created_username }}"
+    state: present
+    groups: sudo
+    append: true
+    create_home: true
+
+- name: Set authorized keys for thane taken from github
+  ansible.posix.authorized_key:
+    user: thane
+    state: present
+    key:  https://github.com/d4sw4r.keys    

@@ -1,0 +1,16 @@
+---
+- name: Notify Discord
+  hosts: localhost
+  gather_facts: false
+  
+  tasks:
+    - name: Send Discord Message - Basic
+      uri:
+        url: "<discord webhook url>"
+        method: 'POST'
+        body_format: json
+        body: {
+          'content': "<message>",
+          'username': "ansible",
+        }
+        status_code: 204
