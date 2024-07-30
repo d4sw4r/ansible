@@ -1,30 +1,39 @@
 ---
-- hosts: "all"
+- name: Basic
+  hosts: "all"
   become: true
-  vars:
-    created_username: thane
-    
+
   roles:
-        -  ../roles/basic
-        - role: artis3n.tailscale
-          vars:
-            # Example pulling the API key from the env vars on the host running Ansible
-            tailscale_authkey: "{{ vault.tailscale.key }}"
-            tailscale_args: "--ssh"
+    - ../roles/github-keys
+    - role: artis3n.tailscale
+      vars:
+        tailscale_authkey: "{{ vault.tailscale.key }}"
+        tailscale_args: "--advertise-exit-node"
+        tailscale_tags: ["server"]
   tasks:
+    - name: Gather facts again
+      ansible.builtin.gather_facts:
+    - ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: "1"
+        sysctl_set: true
+    - ansible.posix.sysctl:
+        name: net.ipv6.conf.all.forwarding
+        value: "1"
+        sysctl_set: true
     - name: Allow ssh via vpn only
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         state: present
-        regexp: '^#ListenAddress'
+        regexp: "^#ListenAddress"
         line: "ListenAddress {{ ansible_tailscale0.ipv4.address }}"
     - name: Disable password authentication for root
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         state: present
-        regexp: '^#?PermitRootLogin'
-        line: 'PermitRootLogin prohibit-password'    
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin prohibit-password"
     - name: Restart sshd
       ansible.builtin.systemd_service:
         state: restarted
-        name: sshd   
+        name: sshd

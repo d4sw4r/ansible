@@ -5,8 +5,6 @@
   ansible.builtin.apt:
     pkg:
       - curl
-      - vim
-      - git
     state: latest
     update_cache: true
 
@@ -14,20 +12,22 @@
   ansible.builtin.lineinfile:
     path: /etc/sudoers
     state: present
-    regexp: '^%sudo'
-    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
-    validate: '/usr/sbin/visudo -cf %s' 
+    regexp: "^%sudo"
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    validate: "/usr/sbin/visudo -cf %s"
 
 - name: Create a new regular user with sudo privileges
   ansible.builtin.user:
-    name: "{{ created_username }}"
+    name: "{{ item }}"
     state: present
     groups: sudo
     append: true
     create_home: true
+  loop: "{{ git_users }}"
 
-- name: Set authorized keys for thane taken from github
+- name: Set authorized keys for user taken from github
   ansible.posix.authorized_key:
-    user: thane
+    user: "{{ item }}"
     state: present
-    key:  https://github.com/d4sw4r.keys    
+    key: "https://github.com/{{ item }}.keys"
+  loop: "{{ git_users }}"
